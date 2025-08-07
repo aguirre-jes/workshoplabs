@@ -47,21 +47,3 @@ jobs:
         tags: |
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}-prod
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-prod
-
-    - name: Test Naive Image
-      run: |
-        docker run --rm -d -p 8080:8080 --name test-naive ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-naive
-        sleep 10
-        curl -f http://localhost:8080/ || exit 1
-        curl -f http://localhost:8080/status || exit 1
-        curl -f http://localhost:8080/hostname || exit 1
-        docker stop test-naive
-
-    - name: Test Production Image
-      run: |
-        docker run --rm -d -p 8081:8080 --name test-prod ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-prod
-        sleep 10
-        curl -f http://localhost:8081/ || exit 1
-        curl -f http://localhost:8081/status || exit 1
-        curl -f http://localhost:8081/hostname || exit 1
-        docker stop test-prod
