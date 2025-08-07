@@ -7,7 +7,7 @@ Este workshop te guía a través de diferentes estrategias de containerización 
 - [Aplicación de Ejemplo](#aplicación-de-ejemplo)
 - [Dockerfiles: Naive vs Producción](#dockerfiles-naive-vs-producción)
 - [Buildpacks con Paketo](#buildpacks-con-paketo)
-- [GitHub Actions Workflows](#github-actions-workflows)
+- [GitHub Actions Workflows](#️-github-actions-workflows)
 - [Comandos Útiles](#comandos-útiles)
 
 ## 🚀 Aplicación de Ejemplo
