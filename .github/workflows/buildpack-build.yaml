@@ -38,9 +38,3 @@ jobs:
           --env BP_ENVIRONMENT=production \
           --env BP_PYTHON_OPTIMIZE=true \
           --publish
-
-    - name: Inspect Buildpack Images
-      run: |
-        echo "=== Buildpack Production Image Info ==="
-        pack inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}-prod
-
