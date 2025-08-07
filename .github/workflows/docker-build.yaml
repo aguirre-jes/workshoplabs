@@ -3,8 +3,11 @@ name: Docker Build and Test
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    paths:
+      - 'Dockerfile.*'
+      - 'requirements.txt'
+      - 'app.py'
+  workflow_dispatch:
 
 env:
   REGISTRY: acrworkshopcontainers2024.azurecr.io
