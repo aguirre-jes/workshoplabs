@@ -1,0 +1,69 @@
+name: Buildpack Build and Test
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  REGISTRY: acrworkshopcontainers2024.azurecr.io
+  IMAGE_NAME: api-status
+
+jobs:
+  buildpack-build-and-test:
+    name: Build with Paketo Buildpacks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4.2.2
+
+    - name: Login to Azure Container Registry
+      uses: docker/login-action@v3.5.0
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    - name: Setup Pack CLI
+      uses: buildpacks/github-actions/setup-pack@v5.1.0
+
+    - name: Build with Buildpacks (Development)
+      run: |
+        pack build ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}-buildpack-dev \
+          --builder paketobuildpacks/builder-jammy-base \
+          --env BP_PYTHON_VERSION=3.11 \
+          --env BP_ENVIRONMENT=development \
+          --publish
+        
+        # Tag as latest-dev
+        docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}-buildpack-dev \
+                   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-buildpack-dev
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-buildpack-dev
+
+    - name: Build with Buildpacks (Production)
+      run: |
+        pack build ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}-buildpack-prod \
+          --builder paketobuildpacks/builder-jammy-base \
+          --env BP_PYTHON_VERSION=3.11 \
+          --env BP_ENVIRONMENT=production \
+          --env BP_PYTHON_OPTIMIZE=true \
+          --publish
+        
+        # Tag as latest-prod
+        docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}-buildpack-prod \
+                   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-buildpack-prod
+        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-buildpack-prod
+
+    - name: Inspect Buildpack Images
+      run: |
+        echo "=== Buildpack Development Image Info ==="
+        pack inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-buildpack-dev
+        
+        echo "=== Buildpack Production Image Info ==="
+        pack inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-buildpack-prod
+        
+        echo "=== Image Sizes Comparison ==="
+        docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep ${{ env.IMAGE_NAME }} || echo "Images comparison completed"
