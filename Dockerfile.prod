@@ -1,0 +1,46 @@
+# --- ETAPA 1: El "Builder" o Taller de Ensamblaje ---
+# Usamos una imagen que tiene las herramientas de construcción de Python.
+# La nombramos "builder" para poder referirnos a ella más tarde.
+FROM python:3.13-slim AS builder
+
+# Establecemos el directorio de trabajo dentro del contenedor.
+WORKDIR /app
+
+# 1. OPTIMIZACIÓN DE CACHÉ:
+# Copiamos solo el archivo de dependencias primero. Si este archivo no cambia,
+# Docker usará la capa de caché en builds futuros, ahorrando mucho tiempo.
+COPY requirements.txt .
+
+# Instalamos las dependencias.
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Ahora copiamos el resto del código de la aplicación.
+COPY . .
+
+# --- ETAPA 2: La Imagen Final y Segura ---
+# Empezamos desde una imagen limpia y ligera.
+FROM python:3.13-slim
+
+# Establecemos el directorio de trabajo.
+WORKDIR /app
+
+# 2. PRINCIPIO DE MÍNIMO PRIVILEGIO (ROOTLESS):
+# Creamos un grupo y un usuario sin privilegios llamado "appuser".
+# El sistema no debería correr como root por seguridad.
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+
+# 3. MULTI-STAGE BUILD:
+# Copiamos las dependencias instaladas desde la etapa builder
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+
+# Copiamos el código de la aplicación desde la etapa builder
+COPY --from=builder /app /app
+
+# Le damos la propiedad de los archivos a nuestro usuario sin privilegios.
+RUN chown -R appuser:appgroup /app
+
+# Cambiamos al usuario sin privilegios para ejecutar la aplicación.
+USER appuser
+
+# Definimos el comando que se ejecutará cuando el contenedor inicie.
+CMD ["python", "app.py"]
