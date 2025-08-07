@@ -3,7 +3,7 @@
 - [Aplicacion de Ejemplo](#aplicacion-de-ejemplo)
 - [Entorno de Desarrollo con DevContainers](#entorno-de-desarrollo-con-devcontainers)
 - [Dockerfiles: Naive vs Produccion](#dockerfiles-naive-vs-produccion)
-- [Golden Images: Proceso en Dos Etapas](#golden-images-proceso-en-dos-etapas)
+- [Golden Images Proceso en Dos Etapas](#golden-images-proceso-en-dos-etapas)
 - [Buildpacks con Paketo](#buildpacks-con-paketo)
 - [GitHub Actions Workflows](#github-actions-workflows)
 - [Comandos utiles](#comandos-utiles) Containerización de Aplicaciones Python
@@ -148,7 +148,7 @@ docker run --rm -p 8081:8080 --name api-prod-container api-status:prod
 docker images | grep api-status
 ```
 
-## 🏢 Golden Images: Proceso en Dos Etapas
+## Golden Images Proceso en Dos Etapas
 
 Una estrategia empresarial avanzada para estandarizar y asegurar las imágenes base en toda la organización.
 
