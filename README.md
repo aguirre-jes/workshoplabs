@@ -1,4 +1,4 @@
-# Wo## 📋 Contenido del Workshop
+# 📋 Contenido del Workshop
 
 - [Aplicacion de Ejemplo](#aplicacion-de-ejemplo)
 - [Entorno de Desarrollo con DevContainers](#entorno-de-desarrollo-con-devcontainers)
@@ -10,7 +10,7 @@
 
 Este workshop te guía a través de diferentes estrategias de containerización para una aplicación Flask simple, mostrando desde enfoques básicos hasta técnicas avanzadas de producción.
 
-## 📋 Contenido del Workshop
+## 📋 Puntos claves
 
 - [Aplicacion de Ejemplo](#aplicacion-de-ejemplo)
 - [Dockerfiles: Naive vs Producción](#dockerfiles-naive-vs-produccion)
