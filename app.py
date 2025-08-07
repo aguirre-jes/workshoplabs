@@ -40,5 +40,5 @@ def get_hostname():
 # Punto de entrada para ejecutar la aplicación
 if __name__ == '__main__':
     # Escucha en todas las interfaces de red (0.0.0.0)
-    # y en el puerto 5000
-    app.run(host='0.0.0.0', port=5000)
+    # y en el puerto 8080
+    app.run(host='0.0.0.0', port=8080)
