@@ -1,4 +1,12 @@
-# Workshop: Containerización de Aplicaciones Python
+# Wo## 📋 Contenido del Workshop
+
+- [Aplicacion de Ejemplo](#aplicacion-de-ejemplo)
+- [Entorno de Desarrollo con DevContainers](#entorno-de-desarrollo-con-devcontainers)
+- [Dockerfiles: Naive vs Produccion](#dockerfiles-naive-vs-produccion)
+- [Golden Images: Proceso en Dos Etapas](#golden-images-proceso-en-dos-etapas)
+- [Buildpacks con Paketo](#buildpacks-con-paketo)
+- [GitHub Actions Workflows](#github-actions-workflows)
+- [Comandos utiles](#comandos-utiles) Containerización de Aplicaciones Python
 
 Este workshop te guía a través de diferentes estrategias de containerización para una aplicación Flask simple, mostrando desde enfoques básicos hasta técnicas avanzadas de producción.
 
@@ -20,10 +28,20 @@ Nuestra aplicación Flask (`app.py`) expone tres endpoints:
 - **`/hostname`** - Hostname del contenedor (útil para demostrar aislamiento)
 
 ### Ejecutar localmente
+
+**Opción 1: Desarrollo local tradicional**
 ```bash
 pip install -r requirements.txt
 python app.py
 ```
+
+**Opción 2: Usando DevContainer (Recomendado)**
+Este repositorio incluye un DevContainer configurado con todas las herramientas necesarias.
+
+1. Abre el proyecto en VS Code
+2. Instala la extensión "Dev Containers"
+3. Presiona `Ctrl+Shift+P` → "Dev Containers: Reopen in Container"
+4. El contenedor incluye Docker, pack CLI y todas las herramientas pre-instaladas
 
 ### Probar la API
 ```bash
@@ -31,6 +49,65 @@ curl http://localhost:8080/
 curl http://localhost:8080/status
 curl http://localhost:8080/hostname
 ```
+
+## 🐳 Entorno de Desarrollo con DevContainers
+
+Este repositorio incluye una configuración completa de **DevContainer** que proporciona un entorno de desarrollo consistente y reproducible.
+
+### ¿Qué es un DevContainer?
+
+Un DevContainer es un contenedor Docker completamente configurado que incluye:
+- ✅ Runtime de la aplicación (Python)
+- ✅ Docker-in-Docker para construir imágenes
+- ✅ Pack CLI para Buildpacks
+- ✅ Extensiones de VS Code pre-configuradas
+- ✅ Herramientas de desarrollo (git, curl, jq)
+
+### Cómo usar el DevContainer
+
+**Prerequisitos:**
+- VS Code instalado
+- Extensión "Dev Containers" instalada
+- Docker ejecutándose en tu máquina
+
+**Pasos:**
+1. Clona este repositorio
+2. Abre el proyecto en VS Code
+3. Presiona `Ctrl+Shift+P` (o `Cmd+Shift+P` en Mac)
+4. Selecciona **"Dev Containers: Reopen in Container"**
+5. Espera a que el contenedor se construya (solo la primera vez)
+6. ¡Listo! Todas las herramientas están disponibles
+
+### Herramientas Pre-instaladas en el DevContainer
+
+```bash
+# Verificar herramientas disponibles
+docker --version          # Docker para construir imágenes
+pack --version            # Pack CLI para Buildpacks
+python --version          # Python runtime
+git --version             # Control de versiones
+curl --version            # Testing de APIs
+jq --version              # Procesamiento JSON
+```
+
+### Extensiones VS Code Incluidas
+
+- **GitHub Actions**: Edición y validación de workflows
+- **YAML/XML**: Soporte para archivos de configuración
+- **Markdown Lint**: Validación de documentación
+- **SonarLint**: Análisis de calidad de código
+- **GitHub Copilot**: Asistente de codificación IA
+- **Code Spell Checker**: Corrector ortográfico
+
+### Ventajas del DevContainer
+
+| Aspecto | Sin DevContainer | Con DevContainer |
+|---------|------------------|------------------|
+| **Configuración** | Manual en cada máquina | Automática e idéntica |
+| **Dependencias** | Instalación manual | Pre-instaladas |
+| **Versiones** | Pueden diferir entre devs | Consistentes para todo el equipo |
+| **Onboarding** | Horas de configuración | Minutos |
+| **Aislamiento** | Contamina el sistema host | Entorno limpio y aislado |
 
 ## Dockerfiles: Naive vs Produccion
 
@@ -71,17 +148,151 @@ docker run --rm -p 8081:8080 --name api-prod-container api-status:prod
 docker images | grep api-status
 ```
 
+## 🏢 Golden Images: Proceso en Dos Etapas
+
+Una estrategia empresarial avanzada para estandarizar y asegurar las imágenes base en toda la organización.
+
+### ¿Qué es una Golden Image?
+
+Una **Golden Image** es una imagen base corporativa personalizada que sirve como punto de partida estandarizado y seguro para todos los proyectos de la empresa. En lugar de que cada equipo parta de imágenes públicas diferentes, todos utilizan la misma base controlada y auditada.
+
+### El Proceso en Dos Etapas
+
+#### **Etapa 1: Crear tu Imagen Base Corporativa**
+
+En esta etapa, no estás construyendo tu aplicación final. Estás creando una nueva imagen base que servirá como el punto de partida estandarizado para todos los proyectos.
+
+**El "Porqué":**
+
+- **🔒 Seguridad**: Instalas y configuras herramientas de seguridad o certificados de confianza una sola vez
+- **📏 Estándares**: Incluyes utilidades comunes (curl, jq, git) que todos los equipos necesitarán
+- **📦 Dependencias Comunes**: Pre-instalas librerías o paquetes base requeridos por la organización
+- **🚀 Velocidad**: Los equipos ya no tienen que "reinventar la rueda" en cada Dockerfile
+
+#### **Etapa 2: Construir la Aplicación Final**
+
+El Dockerfile de tu aplicación se vuelve mucho más simple y limpio, porque parte de tu base personalizada.
+
+### Implementación Práctica
+
+#### Dockerfile.base (Golden Image)
+
+```dockerfile
+# Partimos de una imagen pública, oficial y ligera como Alpine
+FROM alpine:3.20
+
+# Etiquetamos la imagen para identificar al responsable y la versión
+LABEL maintainer="equipo.devops@miempresa.com"
+LABEL version="1.0"
+LABEL description="Golden Image corporativa basada en Alpine"
+
+# Instalamos nuestras herramientas base estándar y actualizamos los certificados
+RUN apk add --no-cache \
+    bash \
+    curl \
+    jq \
+    git \
+    ca-certificates \
+    tzdata \
+    && update-ca-certificates
+
+# Configuramos zona horaria corporativa
+ENV TZ=America/Mexico_City
+
+# Creamos usuario estándar para aplicaciones
+RUN addgroup -g 1001 appgroup && \
+    adduser -D -u 1001 -G appgroup appuser
+
+# Esta imagen no se ejecuta sola, solo sirve como base.
+# Por eso no tiene un comando CMD.
+```
+
+#### Dockerfile.golden (Aplicación con Golden Image)
+
+```dockerfile
+# ¡LA LÍNEA CLAVE!
+# Ya no partimos de "alpine", sino de NUESTRA "Golden Image".
+FROM mi-empresa/base-alpine:1.0
+
+WORKDIR /app
+
+# Cambiar al usuario estándar (ya viene configurado en la Golden Image)
+USER appuser
+
+# ---- El resto de la lógica sigue aquí ----
+# ¡Ya no necesitas instalar curl, jq o bash, ya vienen en la base!
+COPY --chown=appuser:appgroup requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY --chown=appuser:appgroup . .
+
+EXPOSE 8080
+
+CMD ["python", "app.py"]
+```
+
+### Comandos de Construcción
+
+```bash
+# 1. Construir la Golden Image (una sola vez)
+docker build -t mi-empresa/base-alpine:1.0 -f Dockerfile.base .
+
+# 2. Publicar en tu registro interno
+docker tag mi-empresa/base-alpine:1.0 acrworkshopcontainers2024.azurecr.io/mi-empresa/base-alpine:1.0
+docker push acrworkshopcontainers2024.azurecr.io/mi-empresa/base-alpine:1.0
+
+# 3. Construir aplicación usando la Golden Image
+docker build -t api-status:golden -f Dockerfile.golden .
+```
+
+### Beneficios del Enfoque Golden Image
+
+| Aspecto | Sin Golden Image | Con Golden Image |
+|---------|------------------|------------------|
+| **Seguridad** | Cada equipo maneja su propia seguridad | Seguridad centralizada y auditada |
+| **Consistencia** | Diferentes bases, diferentes comportamientos | Base única, comportamiento predecible |
+| **Velocidad** | Reinstalar utilidades en cada build | Utilidades pre-instaladas |
+| **Mantenimiento** | Actualizaciones dispersas | Actualización centralizada |
+| **Compliance** | Difícil de auditar | Fácil auditoría y control |
+
+### Gestión y Versionado
+
+```bash
+# Versionado semántico de Golden Images
+docker build -t mi-empresa/base-alpine:1.0.0 -f Dockerfile.base .
+docker build -t mi-empresa/base-alpine:1.0.1 -f Dockerfile.base .  # Parche
+docker build -t mi-empresa/base-alpine:1.1.0 -f Dockerfile.base .  # Mejora menor
+
+# Tags para diferentes ambientes
+docker tag mi-empresa/base-alpine:1.0.0 mi-empresa/base-alpine:latest
+docker tag mi-empresa/base-alpine:1.0.0 mi-empresa/base-alpine:stable
+```
+
+### Mejores Prácticas
+
+1. **📅 Actualización Regular**: Programa builds automáticos de la Golden Image para parches de seguridad
+2. **🧪 Testing**: Prueba exhaustivamente la Golden Image antes de publicar nuevas versiones
+3. **📚 Documentación**: Mantén documentado qué contiene cada versión de la Golden Image
+4. **🔄 Migración Gradual**: Permite que los equipos migren gradualmente a nuevas versiones
+5. **📊 Monitoreo**: Rastrea qué equipos usan qué versiones de la Golden Image
+
 ## Buildpacks con Paketo
 
 Los buildpacks detectan automáticamente el lenguaje y crean imágenes optimizadas sin necesidad de Dockerfiles.
 
 ### Prerequisitos
+
+**Instalación de pack CLI (Linux)**
+
 ```bash
-# Instalar pack CLI
-brew install buildpacks/tap/pack
-# o
-(curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.33.2/pack-v0.33.2-macos.tgz" | tar -xzf -) && mv pack /usr/local/bin/
+# Instalar pack CLI en Linux
+curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.33.2/pack-v0.33.2-linux.tgz" | tar -xzf -
+sudo mv pack /usr/local/bin/
+pack version
 ```
+
+**💡 Usando DevContainer (Recomendado):**
+Si usas el DevContainer incluido en este repositorio, pack CLI ya está pre-instalado junto con Docker y todas las herramientas necesarias.
 
 ### Construcción con Paketo
 ```bash

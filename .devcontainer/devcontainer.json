@@ -1,0 +1,40 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/java
+{
+	"name": "Worwkflow Dev Container",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+	// For more information about features check: https://github.com/devcontainers/features/tree/main/src/java
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/python:1.7.1": {
+			"version": "3.13.6"
+		}
+	},
+	// Configure tool-specific properties.
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"streetsidesoftware.code-spell-checker",
+				"adpyke.codesnap",
+				"davidanson.vscode-markdownlint",
+				"compulim.vscode-ipaddress",
+				"github.vscode-github-actions",
+				"redhat.vscode-yaml",
+				"redhat.vscode-xml",
+				"github.copilot",
+				"sonarsource.sonarlint-vscode"
+			]
+		}
+	},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "echo 'Post-create command executed.' && curl -sSL 'https://github.com/buildpacks/pack/releases/download/v0.33.2/pack-v0.33.2-linux.tgz' | tar -xzf - && sudo mv pack /usr/local/bin/ && pack version && echo 'DevContainer setup complete!'"
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}

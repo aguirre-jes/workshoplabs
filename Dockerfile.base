@@ -1,0 +1,63 @@
+# Golden Image Corporativa - Imagen Base Estandarizada
+# Esta imagen sirve como punto de partida para todas las aplicaciones de la organización
+
+# Partimos de una imagen pública, oficial y ligera como Alpine
+FROM alpine:3.20
+
+# Etiquetamos la imagen para identificar al responsable y la versión
+LABEL maintainer="equipo.devops@miempresa.com"
+LABEL version="1.0.0"
+LABEL description="Golden Image corporativa basada en Alpine Linux"
+LABEL created="2025-08-07"
+
+# Instalamos nuestras herramientas base estándar y actualizamos los certificados
+RUN apk add --no-cache \
+    # Herramientas básicas del sistema
+    bash \
+    curl \
+    wget \
+    jq \
+    git \
+    # Certificados y seguridad
+    ca-certificates \
+    openssl \
+    # Utilidades de tiempo y zona horaria
+    tzdata \
+    # Python runtime (común en la organización)
+    python3 \
+    py3-pip \
+    # Herramientas de desarrollo comunes
+    build-base \
+    && update-ca-certificates \
+    # Limpieza de cache
+    && rm -rf /var/cache/apk/*
+
+# Configuramos zona horaria corporativa
+ENV TZ=America/Santo_Domingo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Creamos usuario estándar para aplicaciones (principio de mínimo privilegio)
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -D -u 1001 -G appgroup -S appuser
+
+# Configuramos variables de entorno corporativas
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Creamos directorios estándar con permisos correctos
+RUN mkdir -p /app /logs /data && \
+    chown -R appuser:appgroup /app /logs /data
+
+# Configurar pip para permitir instalaciones globales
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
+# Esta imagen no se ejecuta sola, solo sirve como base.
+# Por eso no tiene un comando CMD o ENTRYPOINT.
+
+# Documentación de uso:
+# FROM mi-empresa/base-alpine:1.0.0
+# USER appuser
+# WORKDIR /app
+# ... resto de tu aplicación

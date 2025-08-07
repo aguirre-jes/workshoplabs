@@ -1,0 +1,50 @@
+# Dockerfile usando Golden Image - Aplicación Flask API Status
+# Este Dockerfile demuestra cómo usar una Golden Image corporativa como base
+
+# ¡LA LÍNEA CLAVE!
+# Ya no partimos de "alpine" o "python", sino de NUESTRA "Golden Image"
+# Nota: Para demo local, usa "mi-empresa/base-alpine:1.0"
+# En producción sería algo como: "acrworkshopcontainers2024.azurecr.io/mi-empresa/base-alpine:1.0"
+FROM acrworkshopcontainers2024.azurecr.io/mi-empresa/base-alpine:1.0
+
+# Información sobre esta aplicación específica
+LABEL app.name="api-status"
+LABEL app.version="1.0.0"
+LABEL app.description="API de status usando Golden Image"
+
+# Configuramos el directorio de trabajo (ya existe y tiene permisos correctos)
+WORKDIR /app
+
+# Cambiar al usuario estándar (ya viene configurado en la Golden Image)
+# ¡No necesitamos crear el usuario, ya existe!
+USER appuser
+
+# Copiamos requirements.txt primero para aprovechar cache de Docker
+# Ya no necesitamos instalar curl, jq, bash o python - ¡ya vienen en la Golden Image!
+COPY --chown=appuser:appgroup requirements.txt .
+
+# Instalamos dependencias Python
+# pip ya está disponible en la Golden Image
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiamos el código de la aplicación
+COPY --chown=appuser:appgroup app.py .
+
+# Exponemos el puerto (documentativo)
+EXPOSE 8080
+
+# Verificamos que todo está en orden (opcional, para debugging)
+RUN python --version && \
+    curl --version && \
+    jq --version && \
+    whoami
+
+# Comando para ejecutar la aplicación
+CMD ["python", "app.py"]
+
+# Beneficios de usar Golden Image:
+# ✅ Seguridad: Usuario sin privilegios pre-configurado
+# ✅ Velocidad: Herramientas ya instaladas (curl, jq, python)
+# ✅ Consistencia: Misma base para todos los proyectos
+# ✅ Mantenimiento: Actualizaciones centralizadas en la Golden Image
+# ✅ Compliance: Base auditada y aprobada por el equipo de seguridad

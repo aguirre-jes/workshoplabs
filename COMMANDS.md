@@ -1,5 +1,32 @@
 # Comandos de Workshop - Containerización
 
+## DevContainer (Recomendado)
+
+### Usar DevContainer en VS Code
+```bash
+# 1. Abrir proyecto en VS Code
+code .
+
+# 2. Instalar extensión "Dev Containers" si no está instalada
+# 3. Presionar Ctrl+Shift+P
+# 4. Seleccionar "Dev Containers: Reopen in Container"
+# 5. Esperar a que se construya el contenedor
+
+# Verificar herramientas pre-instaladas
+docker --version
+pack --version
+python --version
+curl --version
+jq --version
+```
+
+### Ventajas del DevContainer
+- ✅ Todas las herramientas pre-instaladas
+- ✅ Docker-in-Docker habilitado
+- ✅ Configuración consistente en todo el equipo
+- ✅ Sin contaminar el sistema host
+- ✅ Extensiones VS Code incluidas
+
 ## Construcción de Imágenes
 
 ### Dockerfile Naive
@@ -12,14 +39,33 @@ docker build -t api-status:naive -f Dockerfile.naive .
 docker build -t api-status:prod -f Dockerfile.prod .
 ```
 
+### Golden Image (Imagen Base Corporativa)
+```bash
+# 1. Construir la Golden Image (base corporativa)
+docker build -t mi-empresa/base-alpine:1.0 -f Dockerfile.base .
+
+# 2. Construir aplicación usando Golden Image
+docker build -t api-status:golden -f Dockerfile.golden .
+
+# 3. Publicar Golden Image en ACR (una sola vez)
+docker tag mi-empresa/base-alpine:1.0 acrworkshopcontainers2024.azurecr.io/mi-empresa/base-alpine:1.0
+docker push acrworkshopcontainers2024.azurecr.io/mi-empresa/base-alpine:1.0
+
+# 4. Versionado de Golden Images
+docker build -t mi-empresa/base-alpine:1.0.0 -f Dockerfile.base .
+docker tag mi-empresa/base-alpine:1.0.0 mi-empresa/base-alpine:latest
+docker tag mi-empresa/base-alpine:1.0.0 mi-empresa/base-alpine:stable
+```
+
 ### Buildpack Paketo
 ```bash
-# Instalar pack CLI (macOS)
-brew install buildpacks/tap/pack
-
 # Instalar pack CLI (Linux)
 curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.33.2/pack-v0.33.2-linux.tgz" | tar -xzf -
 sudo mv pack /usr/local/bin/
+pack version
+
+# Si usas DevContainer, pack ya está pre-instalado
+pack version  # Verificar instalación
 
 # Construir con buildpack
 pack build api-status:buildpack --builder paketobuildpacks/builder:base
@@ -32,6 +78,7 @@ pack build api-status:buildpack --builder paketobuildpacks/builder:base
 docker run --rm -p 8081:8080 --name api-naive api-status:naive
 docker run --rm -p 8081:8080 --name api-prod api-status:prod
 docker run --rm -p 8081:8080 --name api-buildpack api-status:buildpack
+docker run --rm -p 8081:8080 --name api-golden api-status:golden
 ```
 
 ### Ejecutar en background
@@ -67,6 +114,7 @@ curl -i http://localhost:8081/hostname
 ### Comparar tamaños
 ```bash
 docker images | grep api-status
+docker images | grep mi-empresa  # Ver Golden Images
 ```
 
 ### Inspeccionar capas
@@ -74,6 +122,8 @@ docker images | grep api-status
 docker history api-status:naive
 docker history api-status:prod
 docker history api-status:buildpack
+docker history api-status:golden
+docker history mi-empresa/base-alpine:1.0  # Golden Image base
 ```
 
 ### Análisis detallado
@@ -117,6 +167,8 @@ docker rm $(docker ps -aq)  # Eliminar todos
 docker rmi api-status:naive
 docker rmi api-status:prod  
 docker rmi api-status:buildpack
+docker rmi api-status:golden
+docker rmi mi-empresa/base-alpine:1.0  # Golden Image base
 ```
 
 ### Limpieza completa
