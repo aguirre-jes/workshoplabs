@@ -1,0 +1,67 @@
+name: Docker Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: acrworkshopcontainers2024.azurecr.io
+  IMAGE_NAME: api-status
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4.2.2
+
+    - name: Login to Azure Container Registry
+      uses: docker/login-action@v3.5.0
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    - name: Build and push Docker image (Naive)
+      uses: docker/build-push-action@v6.18.0
+      with:
+        context: .
+        file: ./Dockerfile.naive
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}-naive
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-naive
+
+    - name: Build and push Docker image (Production)
+      uses: docker/build-push-action@v6.18.0
+      with:
+        context: .
+        file: ./Dockerfile.prod
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.run_id }}-prod
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-prod
+
+    - name: Test Naive Image
+      run: |
+        docker run --rm -d -p 8080:8080 --name test-naive ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-naive
+        sleep 10
+        curl -f http://localhost:8080/ || exit 1
+        curl -f http://localhost:8080/status || exit 1
+        curl -f http://localhost:8080/hostname || exit 1
+        docker stop test-naive
+
+    - name: Test Production Image
+      run: |
+        docker run --rm -d -p 8081:8080 --name test-prod ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-prod
+        sleep 10
+        curl -f http://localhost:8081/ || exit 1
+        curl -f http://localhost:8081/status || exit 1
+        curl -f http://localhost:8081/hostname || exit 1
+        docker stop test-prod
