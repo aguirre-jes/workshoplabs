@@ -7,7 +7,7 @@ Este workshop te guía a través de diferentes estrategias de containerización 
 - [Aplicación de Ejemplo](#aplicación-de-ejemplo)
 - [Dockerfiles: Naive vs Producción](#dockerfiles-naive-vs-producción)
 - [Buildpacks con Paketo](#buildpacks-con-paketo)
-- [Pipelines de Azure DevOps](#pipelines-de-azure-devops)
+- [GitHub Actions Workflows](#github-actions-workflows)
 - [Comandos Útiles](#comandos-útiles)
 
 ## 🚀 Aplicación de Ejemplo
@@ -97,105 +97,122 @@ docker run --rm -p 8081:8080 --name api-buildpack-container api-status:buildpack
 - 🎯 Optimización automática para el runtime
 - 🔧 Sin necesidad de mantener Dockerfiles
 
-## ⚙️ Pipelines de Azure DevOps
+## ⚙️ GitHub Actions Workflows
 
-### Pipeline 1: Construcción con Dockerfile
+Este workshop incluye dos workflows de GitHub Actions para automatizar la construcción y publicación de imágenes:
 
-Crea un archivo `azure-pipelines-dockerfile.yml`:
+### Workflow 1: Docker Build (`.github/workflows/docker-build.yaml`)
 
-```yaml
-trigger:
-- main
+**Triggers automáticos:**
+- Push o PR cuando se modifiquen: `Dockerfile.*`, `requirements.txt`, `app.py`
 
-variables:
-  dockerRegistry: 'your-registry.azurecr.io'
-  imageRepository: 'api-status'
-  containerRegistry: 'your-acr-connection'
-  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile.prod'
-  tag: '$(Build.BuildId)'
+**Ejecución manual:**
+- Desde Actions → "Docker Build and Test" → "Run workflow"
+- Opciones: `both`, `naive`, `production`
 
-stages:
-- stage: Build
-  displayName: Build and push stage
-  jobs:
-  - job: Build
-    displayName: Build
-    pool:
-      vmImage: ubuntu-latest
-    steps:
-    - task: Docker@2
-      displayName: Build and push Docker image (Naive)
-      inputs:
-        command: buildAndPush
-        repository: $(imageRepository)
-        dockerfile: $(Build.SourcesDirectory)/Dockerfile.naive
-        containerRegistry: $(containerRegistry)
-        tags: |
-          $(tag)-naive
-          latest-naive
-
-    - task: Docker@2
-      displayName: Build and push Docker image (Production)
-      inputs:
-        command: buildAndPush
-        repository: $(imageRepository)
-        dockerfile: $(Build.SourcesDirectory)/Dockerfile.prod
-        containerRegistry: $(containerRegistry)
-        tags: |
-          $(tag)-prod
-          latest-prod
-
-    - task: Docker@2
-      displayName: Display image sizes
-      inputs:
-        command: run
-        arguments: '--rm docker images | grep api-status'
-```
-
-### Pipeline 2: Construcción con Buildpack
-
-Crea un archivo `azure-pipelines-buildpack.yml`:
+**Características:**
+- ✅ Construye imágenes con Dockerfiles
+- ✅ Publica a Azure Container Registry
+- ✅ Tags: `{run_id}-naive`, `{run_id}-prod`, `latest-naive`, `latest-prod`
+- ✅ Tests automáticos de endpoints
 
 ```yaml
-trigger:
-- main
+name: Docker Build and Test
 
-variables:
-  dockerRegistry: 'your-registry.azurecr.io'
-  imageRepository: 'api-status'
-  containerRegistry: 'your-acr-connection'
-  tag: '$(Build.BuildId)'
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile.*'
+      - 'requirements.txt'
+      - 'app.py'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to build'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+        - both
+        - naive
+        - production
 
-stages:
-- stage: BuildWithBuildpack
-  displayName: Build with Paketo Buildpack
-  jobs:
-  - job: BuildPack
-    displayName: Build with Pack CLI
-    pool:
-      vmImage: ubuntu-latest
-    steps:
-    - script: |
-        # Instalar pack CLI
-        curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.33.2/pack-v0.33.2-linux.tgz" | tar -xzf -
-        sudo mv pack /usr/local/bin/
-        pack version
-      displayName: 'Install Pack CLI'
-
-    - script: |
-        # Construir imagen con buildpack
-        pack build $(dockerRegistry)/$(imageRepository):$(tag)-buildpack \
-          --builder paketobuildpacks/builder:base \
-          --publish
-      displayName: 'Build and publish with Buildpack'
-
-    - script: |
-        # Tag como latest
-        docker tag $(dockerRegistry)/$(imageRepository):$(tag)-buildpack \
-                   $(dockerRegistry)/$(imageRepository):latest-buildpack
-        docker push $(dockerRegistry)/$(imageRepository):latest-buildpack
-      displayName: 'Tag and push latest'
+env:
+  REGISTRY: acrworkshopcontainers2024.azurecr.io
+  IMAGE_NAME: api-status
 ```
+
+### Workflow 2: Buildpack Build (`.github/workflows/buildpack-build.yaml`)
+
+**Triggers automáticos:**
+- Push cuando se modifiquen: `requirements.txt`, `app.py`, `.python-version`
+
+**Ejecución manual:**
+- Desde Actions → "Buildpack Build and Test" → "Run workflow"
+- Opciones de environment: `both`, `development`, `production`
+- Opción de builder: Permite especificar buildpack diferente
+
+**Características:**
+- ✅ Construye imágenes con Paketo Buildpacks
+- ✅ Sin necesidad de Dockerfiles
+- ✅ Tags: `{run_id}-dev`, `{run_id}-prod`
+- ✅ Inspección automática de metadata de buildpacks
+
+```yaml
+name: Buildpack Build and Test
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'requirements.txt'
+      - 'app.py'
+      - '.python-version'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to build'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+        - both
+        - development
+        - production
+      builder:
+        description: 'Buildpack builder to use'
+        required: false
+        default: 'paketobuildpacks/builder-jammy-base'
+        type: string
+```
+
+### Configuración de Secrets
+
+Para que los workflows funcionen, configura estos secrets en GitHub:
+
+1. Ve a **Settings** → **Secrets and variables** → **Actions**
+2. Agrega los siguientes Repository secrets:
+   - `ACR_USERNAME`: Usuario de Azure Container Registry
+   - `ACR_PASSWORD`: Contraseña de Azure Container Registry
+
+### Cómo ejecutar workflows manualmente
+
+1. **Ve a tu repositorio en GitHub**
+2. **Actions** → Selecciona el workflow
+3. **"Run workflow"** → Configura opciones
+4. **"Run workflow"** para ejecutar
+
+### Comparación de Workflows
+
+| Característica | Docker Build | Buildpack Build |
+|---|---|---|
+| **Trigger** | Cambios en Dockerfiles | Cambios en código Python |
+| **Método** | Dockerfiles tradicionales | Cloud Native Buildpacks |
+| **Configuración** | Manual en Dockerfile | Automática por detección |
+| **Seguridad** | Depende del Dockerfile | Imágenes base mantenidas |
+| **Tamaño** | Variable | Optimizado automáticamente |
+| **Mantenimiento** | Manual | Automático |
 
 ## 🔧 Comandos Útiles
 
@@ -253,8 +270,9 @@ Al completar este workshop habrás aprendido:
    - Minimización de superficie de ataque
 
 3. **Automatización con CI/CD**
-   - Pipelines de Azure DevOps
-   - Integración con registros de contenedores
+   - GitHub Actions workflows
+   - Integración con Azure Container Registry
+   - Ejecución automática y manual de pipelines
 
 4. **Optimización de imágenes**
    - Cache de capas de Docker
@@ -265,8 +283,9 @@ Al completar este workshop habrás aprendido:
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
 - [Paketo Buildpacks](https://paketo.io/)
 - [Azure Container Registry](https://docs.microsoft.com/en-us/azure/container-registry/)
-- [Azure DevOps Pipelines](https://docs.microsoft.com/en-us/azure/devops/pipelines/)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [GitHub Actions Marketplace](https://github.com/marketplace?type=actions)
 
 ---
 
-**¡Feliz containerización! 🐳**
+## ¡Feliz containerización! 🐳

@@ -125,18 +125,54 @@ docker system prune -f
 docker system prune -af  # Incluye imágenes no utilizadas
 ```
 
-## Azure DevOps
+## GitHub Actions
 
-### Configurar variables
+### Configurar secrets en GitHub
 ```bash
-# En Azure DevOps, configurar:
-dockerRegistry: 'your-registry.azurecr.io'
-imageRepository: 'api-status'
-containerRegistry: 'your-acr-connection'
-DOCKER_USERNAME: 'service-principal-id'
-DOCKER_PASSWORD: 'service-principal-password'
+# En GitHub: Settings → Secrets and variables → Actions
+# Agregar Repository secrets:
+ACR_USERNAME: 'acrworkshopcontainers2024'
+ACR_PASSWORD: 'tu-password-de-acr'
 ```
 
-### Ejecutar pipelines
-- Pipeline Dockerfile: `azure-pipelines-dockerfile.yml`
-- Pipeline Buildpack: `azure-pipelines-buildpack.yml`
+### Ejecución manual de workflows
+```bash
+# 1. Ve a tu repositorio en GitHub
+# 2. Actions → Selecciona workflow
+# 3. "Run workflow" → Configura opciones
+# 4. "Run workflow"
+
+# Workflow: "Docker Build and Test"
+# Opciones: both, naive, production
+
+# Workflow: "Buildpack Build and Test" 
+# Opciones environment: both, development, production
+# Opción builder: paketobuildpacks/builder-jammy-base
+```
+
+### Triggers automáticos
+```bash
+# Docker Build workflow se ejecuta al modificar:
+- Dockerfile.*
+- requirements.txt  
+- app.py
+
+# Buildpack Build workflow se ejecuta al modificar:
+- requirements.txt
+- app.py
+- .python-version
+```
+
+### Ver resultados
+```bash
+# Imágenes generadas en ACR:
+# Docker workflow:
+acrworkshopcontainers2024.azurecr.io/api-status:{run_id}-naive
+acrworkshopcontainers2024.azurecr.io/api-status:latest-naive
+acrworkshopcontainers2024.azurecr.io/api-status:{run_id}-prod  
+acrworkshopcontainers2024.azurecr.io/api-status:latest-prod
+
+# Buildpack workflow:
+acrworkshopcontainers2024.azurecr.io/api-status:{run_id}-dev
+acrworkshopcontainers2024.azurecr.io/api-status:{run_id}-prod
+```
