@@ -203,6 +203,9 @@ ENV TZ=America/Mexico_City
 RUN addgroup -g 1001 appgroup && \
     adduser -D -u 1001 -G appgroup appuser
 
+# Configurar pip para permitir instalaciones globales
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
 # Esta imagen no se ejecuta sola, solo sirve como base.
 # Por eso no tiene un comando CMD.
 ```
