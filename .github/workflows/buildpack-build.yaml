@@ -13,7 +13,7 @@ env:
   IMAGE_NAME: api-status
 
 jobs:
-  buildpack-build-and-test:
+  buildpack:
     name: Build with Paketo Buildpacks
     runs-on: ubuntu-24.04
     permissions:
