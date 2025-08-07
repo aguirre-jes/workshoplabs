@@ -4,13 +4,14 @@ Este workshop te guía a través de diferentes estrategias de containerización 
 
 ## 📋 Contenido del Workshop
 
-- [Aplicación de Ejemplo](#aplicación-de-ejemplo)
-- [Dockerfiles: Naive vs Producción](#dockerfiles-naive-vs-producción)
+- [Aplicacion de Ejemplo](#aplicacion-de-ejemplo)
+- [Dockerfiles: Naive vs Producción](#dockerfiles-naive-vs-produccion)
 - [Buildpacks con Paketo](#buildpacks-con-paketo)
-- [GitHub Actions Workflows](#️-github-actions-workflows)
-- [Comandos Útiles](#comandos-útiles)
+- [GitHub Actions Workflows](#github-actions-workflows)
+- [Comandos utiles](#comandos-utiles)
+- [Referencia Completa de Comandos](COMMANDS.md)
 
-## 🚀 Aplicación de Ejemplo
+## 🚀 aplicacion de ejemplo
 
 Nuestra aplicación Flask (`app.py`) expone tres endpoints:
 
@@ -31,7 +32,7 @@ curl http://localhost:8080/status
 curl http://localhost:8080/hostname
 ```
 
-## 🐳 Dockerfiles: Naive vs Producción
+## Dockerfiles: Naive vs Produccion
 
 ### 1. Dockerfile Naive (`Dockerfile.naive`)
 
@@ -70,7 +71,7 @@ docker run --rm -p 8081:8080 --name api-prod-container api-status:prod
 docker images | grep api-status
 ```
 
-## 📦 Buildpacks con Paketo
+## Buildpacks con Paketo
 
 Los buildpacks detectan automáticamente el lenguaje y crean imágenes optimizadas sin necesidad de Dockerfiles.
 
@@ -97,7 +98,7 @@ docker run --rm -p 8081:8080 --name api-buildpack-container api-status:buildpack
 - 🎯 Optimización automática para el runtime
 - 🔧 Sin necesidad de mantener Dockerfiles
 
-## ⚙️ GitHub Actions Workflows
+## GitHub Actions Workflows
 
 Este workshop incluye dos workflows de GitHub Actions para automatizar la construcción y publicación de imágenes:
 
@@ -214,7 +215,7 @@ Para que los workflows funcionen, configura estos secrets en GitHub:
 | **Tamaño** | Variable | Optimizado automáticamente |
 | **Mantenimiento** | Manual | Automático |
 
-## 🔧 Comandos Útiles
+## Comandos utiles
 
 ### Construcción Local
 ```bash
